@@ -1,4 +1,7 @@
 ﻿using EmployeeManagement.Business;
+using EmployeeManagement.Business.EventArguments;
+using EmployeeManagement.Business.Exceptions;
+using EmployeeManagement.DataAccess.Entities;
 using EmployeeManagement.Services.Test;
 using System;
 using System.Collections.Generic;
@@ -79,6 +82,36 @@ namespace EmployeManagement.Test
 
             // Assert
             Assert.All(internalEmployee.AttendedCourses, course => Assert.False(course.IsNew));
+        }
+
+        [Fact]
+        public async Task GiveRaise_RaisebelowMinimumGiven_EmployeeInvalidRaiseExceptionMustBeThrown()
+        {
+            // Arrange
+            var employeeService = new EmployeeService(
+                new EmployeeManagementTestDataRepository(),
+                new EmployeeFactory());
+            var internalEmployee = new InternalEmployee("Huy", "Vo", 5, 2500, false, 1);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<EmployeeInvalidRaiseException>(
+                async () => await employeeService.GiveRaiseAsync(internalEmployee, 50));
+        }
+
+        [Fact]
+        public void NotifyOfAbsence_EmployeeIsAbsent_OnEmployeeIsAbsentEventMustBeTriggered()
+        {
+            // Arrange
+            var employeeService = new EmployeeService(
+                new EmployeeManagementTestDataRepository(),
+                new EmployeeFactory());
+            var internalEmployee = new InternalEmployee("Huy", "Vo", 5, 3000, false, 1);
+
+            // Act & Assert
+            Assert.Raises<EmployeeIsAbsentEventArgs>(
+                handler => employeeService.EmployeeIsAbsent += handler,
+                handler => employeeService.EmployeeIsAbsent -= handler,
+                () => employeeService.NotifyOfAbsence(internalEmployee));
         }
     }
 }
