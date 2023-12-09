@@ -8,7 +8,7 @@ namespace EmployeeManagement.Controllers
     public class InternalEmployeeController : Controller
     {
         private readonly IEmployeeService _employeeService;
-        private readonly IMapper _mapper; 
+        private readonly IMapper _mapper;
 
         public InternalEmployeeController(IEmployeeService employeeService,
             IMapper mapper)
@@ -20,7 +20,7 @@ namespace EmployeeManagement.Controllers
         [HttpGet]
         public IActionResult AddInternalEmployee()
         {
-            return View(new CreateInternalEmployeeViewModel()); 
+            return View(new CreateInternalEmployeeViewModel());
         }
 
         [HttpPost]
@@ -49,17 +49,24 @@ namespace EmployeeManagement.Controllers
             [FromRoute(Name = "id")] Guid? employeeId)
         {
             if (!employeeId.HasValue)
-            {                 
-                return RedirectToAction("Index", "EmployeeOverview"); 
+            {
+                if (Guid.TryParse(TempData["EmployeeId"]?.ToString(), out Guid employeeIdFormTempData))
+                {
+                    employeeId = employeeIdFormTempData;
+                }
+                else
+                {
+                    return RedirectToAction("Index", "EmployeeOverview");
+                }
             }
 
-            var internalEmployee = await _employeeService.FetchInternalEmployeeAsync(employeeId.Value); 
+            var internalEmployee = await _employeeService.FetchInternalEmployeeAsync(employeeId.Value);
             if (internalEmployee == null)
             {
-                return RedirectToAction("Index", "EmployeeOverview"); 
+                return RedirectToAction("Index", "EmployeeOverview");
             }
-             
-            return View(_mapper.Map<InternalEmployeeDetailViewModel>(internalEmployee));  
+
+            return View(_mapper.Map<InternalEmployeeDetailViewModel>(internalEmployee));
         }
 
         [HttpPost]
@@ -77,9 +84,9 @@ namespace EmployeeManagement.Controllers
             if (internalEmployee == null)
             {
                 return RedirectToAction("Index", "EmployeeOverview");
-            } 
- 
-            return View("InternalEmployeeDetails", 
+            }
+
+            return View("InternalEmployeeDetails",
                 _mapper.Map<InternalEmployeeDetailViewModel>(internalEmployee));
         }
     }

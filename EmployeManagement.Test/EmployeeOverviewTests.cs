@@ -1,6 +1,8 @@
-﻿using EmployeeManagement.Business;
+﻿using AutoMapper;
+using EmployeeManagement.Business;
 using EmployeeManagement.Controllers;
 using EmployeeManagement.DataAccess.Entities;
+using EmployeeManagement.MapperProfiles;
 using EmployeeManagement.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -27,7 +29,17 @@ namespace EmployeManagement.Test
                     new InternalEmployee("Megan4", "Jones4", 2, 2000, true, 3)
                 });
 
-            _employeeOverviewController = new EmployeeOverviewController(employeeServiceMock.Object, null);
+            //var mapperMock = new Mock<IMapper>();
+            //mapperMock.Setup(m => m.Map<InternalEmployee, InternalEmployeeForOverviewViewModel>
+            //(It.IsAny<InternalEmployee>()))
+            //.Returns(new InternalEmployeeForOverviewViewModel());
+
+            var mapperConfiguration = new MapperConfiguration(
+                cfg => cfg.AddProfile<EmployeeProfile>());
+            var mapper = new Mapper(mapperConfiguration);
+
+            _employeeOverviewController = new EmployeeOverviewController(
+                employeeServiceMock.Object, mapper);
         }
 
         [Fact]
@@ -67,6 +79,20 @@ namespace EmployeManagement.Test
 
             // Assert
             Assert.Equal(4, ((EmployeeOverviewViewModel)((ViewResult)viewResult).Model).InternalEmployees.Count);
+        }
+
+        [Fact]
+        public async Task Index_GetAction_ReturnsViewResultWithInternalEmployees()
+        {
+            // Arrange
+
+            // Act
+            var result = await _employeeOverviewController.Index();
+
+            // Assert
+            var viewResult = Assert.IsType<ViewResult>(result);
+            var modelPassedView = Assert.IsType<EmployeeOverviewViewModel>(viewResult.Model);
+            Assert.Equal(4, modelPassedView.InternalEmployees.Count);
         }
     }
 }

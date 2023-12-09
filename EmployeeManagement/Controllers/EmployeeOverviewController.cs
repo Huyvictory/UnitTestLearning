@@ -23,20 +23,20 @@ namespace EmployeeManagement.Controllers
             var internalEmployees = await _employeeService.FetchInternalEmployeesAsync();
 
             // with manual mapping
-            var internalEmployeeForOverviewViewModels =
-                internalEmployees.Select(e => new InternalEmployeeForOverviewViewModel()
-                {
-                    Id = e.Id,
-                    FirstName = e.FirstName,
-                    LastName = e.LastName,
-                    Salary = e.Salary,
-                    SuggestedBonus = e.SuggestedBonus,
-                    YearsInService = e.YearsInService
-                });
+            //var internalEmployeeForOverviewViewModels =
+            //    internalEmployees.Select(e => new InternalEmployeeForOverviewViewModel()
+            //    {
+            //        Id = e.Id,
+            //        FirstName = e.FirstName,
+            //        LastName = e.LastName,
+            //        Salary = e.Salary,
+            //        SuggestedBonus = e.SuggestedBonus,
+            //        YearsInService = e.YearsInService
+            //    });
 
             // with AutoMapper
-            //var internalEmployeeForOverviewViewModels =
-            //    _mapper.Map<IEnumerable<InternalEmployeeForOverviewViewModel>>(internalEmployees);
+            var internalEmployeeForOverviewViewModels =
+                _mapper.Map<IEnumerable<InternalEmployeeForOverviewViewModel>>(internalEmployees);
 
             return View(new EmployeeOverviewViewModel(internalEmployeeForOverviewViewModels));
         }
