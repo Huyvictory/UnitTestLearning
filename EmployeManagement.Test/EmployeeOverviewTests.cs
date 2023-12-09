@@ -4,11 +4,13 @@ using EmployeeManagement.Controllers;
 using EmployeeManagement.DataAccess.Entities;
 using EmployeeManagement.MapperProfiles;
 using EmployeeManagement.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -93,6 +95,63 @@ namespace EmployeManagement.Test
             var viewResult = Assert.IsType<ViewResult>(result);
             var modelPassedView = Assert.IsType<EmployeeOverviewViewModel>(viewResult.Model);
             Assert.Equal(4, modelPassedView.InternalEmployees.Count);
+        }
+
+        [Fact]
+        public void ProtectedIndex_GetActionForUserInAdminRole_MustRedirectToAdminIndex()
+        {
+            // Arrange
+            var userClaims = new List<Claim>()
+            {
+                new Claim(ClaimTypes.Name, "Karen"),
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var claimsIndentity = new ClaimsIdentity(userClaims, "UnitTest");
+            var claimsPrincipal = new ClaimsPrincipal(claimsIndentity);
+
+            var httpContext = new DefaultHttpContext()
+            {
+                User = claimsPrincipal
+            };
+
+            _employeeOverviewController.ControllerContext = new ControllerContext()
+            {
+                HttpContext = httpContext
+            };
+
+            // Act
+            var result = _employeeOverviewController.ProtectedIndex();
+
+            // Assert
+            var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("AdminIndex", redirectToActionResult.ActionName);
+            Assert.Equal("EmployeeManagement", redirectToActionResult.ControllerName);
+        }
+
+        [Fact]
+        public void ProtectedIndex_GetActionForUserInAdminRole_MustRedirectToAdminIndex_WithMoq()
+        {
+            // Arrange
+            var mockPrincipal = new Mock<ClaimsPrincipal>();
+            mockPrincipal.Setup(x => x.IsInRole(It.Is<string>(s => s == "Admin")))
+                .Returns(true);
+
+            var httpContextMock = new Mock<HttpContext>();
+            httpContextMock.Setup(x => x.User)
+                .Returns(mockPrincipal.Object);
+
+            _employeeOverviewController.ControllerContext = new ControllerContext()
+            {
+                HttpContext = httpContextMock.Object
+            };
+
+            // Act
+            var result = _employeeOverviewController.ProtectedIndex();
+
+            // Assert
+            var redirectToActionResult = Assert.IsType<RedirectToActionResult>(result);
+            Assert.Equal("AdminIndex", redirectToActionResult.ActionName);
+            Assert.Equal("EmployeeManagement", redirectToActionResult.ControllerName);
         }
     }
 }

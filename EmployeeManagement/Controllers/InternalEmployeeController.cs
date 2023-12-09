@@ -9,12 +9,16 @@ namespace EmployeeManagement.Controllers
     {
         private readonly IEmployeeService _employeeService;
         private readonly IMapper _mapper;
+        private readonly IPromotionService _promotionService;
 
         public InternalEmployeeController(IEmployeeService employeeService,
-            IMapper mapper)
+            IMapper mapper,
+            IPromotionService promotionService
+            )
         {
             _employeeService = employeeService;
             _mapper = mapper;
+            _promotionService = promotionService;
         }
 
         [HttpGet]
@@ -50,7 +54,12 @@ namespace EmployeeManagement.Controllers
         {
             if (!employeeId.HasValue)
             {
-                if (Guid.TryParse(TempData["EmployeeId"]?.ToString(), out Guid employeeIdFormTempData))
+                if (Guid.TryParse(HttpContext?.Session?.GetString("EmployeeId"),
+                    out Guid employeeIdFromSession))
+                {
+                    employeeId = employeeIdFromSession;
+                }
+                else if (Guid.TryParse(TempData["EmployeeId"]?.ToString(), out Guid employeeIdFormTempData))
                 {
                     employeeId = employeeIdFormTempData;
                 }
@@ -84,6 +93,18 @@ namespace EmployeeManagement.Controllers
             if (internalEmployee == null)
             {
                 return RedirectToAction("Index", "EmployeeOverview");
+            }
+
+            if (await _promotionService.PromoteInternalEmployeeAsync(internalEmployee))
+            {
+                ViewBag.PromotionRequestMessage = "Employee was promoted.";
+
+                // get the updated employee
+                internalEmployee = await _employeeService.FetchInternalEmployeeAsync(employeeId.Value);
+            }
+            else
+            {
+                ViewBag.PromotionRequestMessage = "Sorry, this employee isn't eligible for promotion.";
             }
 
             return View("InternalEmployeeDetails",
